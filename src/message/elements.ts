@@ -9,6 +9,9 @@ export type ImageElem={
     type:'image'
     image:string|Buffer
 }
+export type RecordElem={
+    type:'record'
+}
 export type XmlElem={
     type:'xml'
     xml:string

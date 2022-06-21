@@ -96,9 +96,12 @@ export class BaseClient extends EventEmitter {
         const res=await this._callApi('/message/sync',{}).then(res=>res)
         if(res && res.data){
             for(const msg of res.data.add_msgs){
+                if(this.config.ignore_self && msg.from_user_name.str===this.uin) continue
                 const type=msg.from_user_name.str.endsWith('@chatroom')?'group':'private'
                 if(!msg.from_user_name.str.match(/(^wxid_)|(@chatroom$)/)) return
-                this.logger.debug(`[recv ${type}:${msg.from_user_name.str}] ${msg.content.str}`)
+                if(msg.push_content){
+                    this.logger.info(`[recv ${type}]${msg.push_content}`)
+                }
                 new Message(this as any,msg)
             }
         }

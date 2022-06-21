@@ -12,6 +12,7 @@ export type LogLevel = 'info' | 'none' | 'error' | 'debug' | 'warn' | 'trace' | 
 export interface Config {
     log_level?: LogLevel
     data_dir?: string
+    ignore_self?:boolean
     heartbeat_interval?: number
     remote?: string
 }
@@ -20,6 +21,7 @@ export const defaultConfig: Config = {
     log_level: 'info',
     data_dir: join(process.cwd(), 'data'),
     heartbeat_interval:2000,
+    ignore_self:true,
     remote: 'http://49.234.86.244:8080/'
 }
 export class Client extends BaseClient {
@@ -54,7 +56,7 @@ export class Client extends BaseClient {
         if(result.code==='26')
             this.emit('system.online')
         else{
-            removeFileSync(join(this.dir,'device'))
+            // removeFileSync(join(this.dir,'device'))
             this.emit("system.login")
             this.logger.error(result)
         }
