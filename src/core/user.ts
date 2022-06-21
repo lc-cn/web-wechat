@@ -20,7 +20,7 @@ export class User extends Contactable{
     }
 
     /** 返回作为某群群员的实例 */
-    asMember(gid: number, strict = false) {
+    asMember(gid: string, strict = false) {
         return this.c.pickMember(gid, this.uid, strict)
     }
     constructor(c:Client,public readonly uid:string) {

@@ -12,9 +12,9 @@ export interface FriendInfo extends UserInfo{
 }
 const weakMap = new WeakMap<FriendInfo, Friend>()
 export class Friend extends User{
-    static as(this:Client,uid:string){
+    static as(this:Client,uid:string,strict?:boolean){
         const info = this.fl.get(uid)
-        if (!info)
+        if (strict && !info)
             throw new Error(uid + `不是你的好友`)
         let friend = weakMap.get(info!)
         if (friend) return friend

@@ -15,38 +15,26 @@ export interface Config {
     log_level?: LogLevel
     data_dir?: string
     heartbeat_interval?: number
+    remote?: string
 }
 
 export const defaultConfig: Config = {
     log_level: 'info',
     data_dir: join(process.cwd(), 'data'),
-    heartbeat_interval:2000
+    heartbeat_interval:2000,
+    remote: 'http://49.234.86.244:8080/'
 }
 export class Client extends BaseClient {
-    readonly pickGroup = Group.as.bind(this) as (group_id:string)=>Group
+    readonly pickGroup = Group.as.bind(this) as (group_id:string,strict?:boolean)=>Group
     /** 得到一个好友对象, 通常不会重复创建 */
-    readonly pickFriend = Friend.as.bind(this) as (group_id:string)=>Friend
+    readonly pickFriend = Friend.as.bind(this) as (user_id:string,strict?:boolean)=>Friend
     /** 得到一个群员对象, 通常不会重复创建 */
-    readonly pickMember = Member.as.bind(this) as (group_id:string)=>Member
+    readonly pickMember = Member.as.bind(this) as (group_id:string,user_id:string,strict?:boolean)=>Member
     /** 创建一个用户对象 */
-    readonly pickUser = User.as.bind(this)
-    constructor(remote: string, config: Config = {}) {
-        super(remote,deepMerge(defaultConfig,config))
+    readonly pickUser = User.as.bind(this) as (user_id:string)=>User
+    constructor(uin: string, config: Config = {}) {
+        super(uin,deepMerge(defaultConfig,config))
 
-    }
-    async qrcode() {
-        const res = await this._callApi('/login/qr_code',{wx_id:this.info.wx_id})
-        console.log(res)
-        const {data:{qr_link}} = res
-        const {data:image}= await axios.get(qr_link,{responseType:'arraybuffer'})
-        const file=join(this.config.data_dir,'qrcode.png')
-        fs.writeFile(file, image, () => {
-            try {
-                logQrcode(image)
-            } catch { }
-            this.logger.mark("二维码图片已保存到：" + file)
-            this.emit("system.login.qrcode", { image })
-        })
     }
     async sendPrivateMsg(user_id:string,message:Sendable){
         return this.pickFriend(user_id).sendMsg(message)
@@ -68,8 +56,8 @@ export class Client extends BaseClient {
         if(result.code==='26')
             this.emit('system.online')
         else{
-            console.log(result)
-            this.qrcode()
+            this.emit("system.login")
+            this.logger.error(result)
         }
     }
 }

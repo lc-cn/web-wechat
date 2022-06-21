@@ -1,14 +1,15 @@
 import {EventEmitter} from "events";
 import axios, {AxiosInstance} from "axios";
-import {findOrCreateDirSync, findOrCreateFileSync, randomUUID, readFileSync,writeFileSync} from "../common";
+import {findOrCreateDirSync, findOrCreateFileSync, logQrcode, randomUUID, readFileSync, writeFileSync} from "../common";
 import {join} from "path";
 import {Config} from "../client";
 import {getLogger, Logger} from "log4js";
 import {GroupInfo} from "./group";
 import {MemberInfo} from "./member";
 import {FriendInfo} from "./friend";
-interface WxInfo{
-    deviceId:string
+import * as fs from "fs";
+import {Message} from "../message";
+interface AccountInfo{
     wx_id?:string
     weixin?:string
     nick_name?:string
@@ -19,42 +20,32 @@ interface WxInfo{
     small_head_img_url?:string
     big_head_img_url?:string
 }
+
 export class BaseClient extends EventEmitter {
     public rpc: AxiosInstance
     public logger: Logger
-    private _info:WxInfo
+    public dir: string
     readonly fl: Map<string, FriendInfo> = new Map<string, FriendInfo>()
     readonly gl: Map<string, GroupInfo> = new Map<string, GroupInfo>()
     readonly gml = new Map<string, Map<string, MemberInfo>>()
-    get info():WxInfo{
-        try{
-            const info=readFileSync(join(this.config.data_dir, 'device.json'))
-            this._info=info
-            return info
-        }catch(e){
-            return this._info
-        }
-    }
-    set info(wxInfo:WxInfo){
-        wxInfo.deviceId=this.info.deviceId
-        if(!wxInfo.deviceId)wxInfo.deviceId=randomUUID()
-        this.rpc.defaults.headers['Authorization'] = `Bearer ${wxInfo.deviceId}`
-        writeFileSync(join(this.config.data_dir, 'device.json'), wxInfo)
-        this._info=wxInfo
-    }
-    constructor(remote: string, public config: Config = {}) {
+    public deviceId:string
+    public info:AccountInfo
+    private intervals: Map<string, NodeJS.Timer> = new Map<string, NodeJS.Timer>()
+    constructor(public uin: string, public config: Config = {}) {
         super();
         this.logger = getLogger('client')
         this.logger.level = config.log_level
-        findOrCreateDirSync(config.data_dir)
-        const isNew = findOrCreateFileSync(join(config.data_dir, 'device.json'), {device_id: randomUUID()})
+        this.dir=join(config.data_dir, uin)
+        findOrCreateDirSync(this.dir)
+        const isNew = findOrCreateFileSync(join(this.dir, 'device'), randomUUID())
+        this.deviceId=readFileSync(join(this.dir, 'device')).toString()
         if (isNew) {
-            this.logger.mark('create new device id:' + this.info.deviceId)
+            this.logger.mark('create new device id:' + this.deviceId)
         }
         this.rpc = axios.create({
-            baseURL: remote,
+            baseURL: config.remote,
             headers: {
-                "Authorization": `Bearer ${this.info.deviceId}`,
+                "Authorization": `Bearer ${this.deviceId}`,
                 "Content-Type": "application/json",
                 "Connection": "keep-alive"
             }
@@ -76,40 +67,70 @@ export class BaseClient extends EventEmitter {
             }
             return res.data
         })
-        let checkInterval
-        this.on('system.login.qrcode',()=>{
-            checkInterval= setInterval(()=>this._checkStatus(),5000)
-        })
-        this.on('system.online', async ()=>{
-            clearInterval(checkInterval)
-            if(this.config.heartbeat_interval){
-                setInterval(()=>this._heartbeat(),this.config.heartbeat_interval)
-            }
-            this.logger.info('登录成功')
-            const res=await this._callApi('user/profile')
-            this.info=res.data
-            this.logger.mark(`Welcome, ${this.info.nick_name} ! 正在加载资源...`)
-            await Promise.all([this._initGroupList(),this._initFriendList()])
-            this.logger.info(`加载了${this.fl.size}个好友，${this.gl.size}个群`)
-            this.emit('system.ready')
-        })
+        this.on('system.login',this.getQrcode.bind(this))
+        this.on('system.online', this._init.bind(this))
+        this.on('system.ready',this._start.bind(this))
     }
+    async getQrcode(){
+        const res = await this._callApi('/login/qr_code',{wx_id:this.uin})
+        this.logger.debug(res)
+        const {data:{qr_link}} = res || {data:{qr_link:''}}
+        const {data:image}= await axios.get(qr_link,{responseType:'arraybuffer'})
+        const file=join(this.dir,'qrcode.png')
+        fs.writeFile(file, image, () => {
+            try {
+                logQrcode(image)
+            } catch { }
+            this.logger.mark("二维码图片已保存到：" + file)
+        })
+        this.intervals.set('checkStatus',setInterval(()=>this._checkStatus(),1000))
+    }
+    _start(){
+        this.off('system.online',this._init)
+        this.intervals.set('msgSync',setInterval(()=>this._syncMsg(),2000))
+    }
+    async _stop(){
 
+    }
+    private async _syncMsg(){
+        const res=await this._callApi('/message/sync',{}).then(res=>res)
+        if(res && res.data){
+            for(const msg of res.data.add_msgs){
+                const type=msg.from_user_name.str.endsWith('@chatroom')?'group':'private'
+                if(!msg.from_user_name.str.match(/(^wxid_)|(@chatroom$)/)) return
+                this.logger.debug(`[recv ${type}:${msg.from_user_name.str}] ${msg.content.str}`)
+                new Message(this as any,msg)
+            }
+        }
+    }
+    private async _init(){
+        clearInterval(this.intervals.get('checkStatus'))
+        this.intervals.delete('checkStatus')
+        if(this.config.heartbeat_interval){
+            setInterval(()=>this._heartbeat(),this.config.heartbeat_interval)
+        }
+        this.logger.info('登录成功')
+        const res=await this._callApi('user/profile')
+        this.info=res.data
+        this.logger.mark(`Welcome, ${this.info.nick_name} ! 正在加载资源...`)
+        await Promise.all([this._initGroupList(),this._initFriendList()])
+        this.logger.info(`加载了${this.fl.size}个好友，${this.gl.size}个群`)
+        this.emit('system.ready')
+    }
     protected async _initFriendList() {
-        const contactIds: string[] = []
+        const friendIds: string[] = []
         let res, wx_contact_seq = 0,room_contact_seq = 0
         do {
             res = await this._callApi('/contact/list/all', {wx_contact_seq,room_contact_seq})
-            console.log(res)
             wx_contact_seq= Number(res.data.current_wx_contact_seq)
             room_contact_seq=Number(res.data.current_chat_room_contact_seq)
-            contactIds.push(...res.data.ids.filter(id => id.startsWith('wxid_')))
+            friendIds.push(...res.data.ids.filter(id => id.startsWith('wxid_')))
         } while (res.code === '0' && res.data.ids.length)
-        let task = []
-        while (contactIds.length) {
-            task.push(this._callApi('/contact/batch', {ids: contactIds.splice(0, 20)}).then(res => res.data))
+        let friendTasks = []
+        while (friendIds.length) {
+            friendTasks.push(this._callApi('/contact/batch', {ids: friendIds.splice(0, 20)}).then(res => res.data))
         }
-        const friendList: FriendInfo[] = await Promise.all(task).then(res => res.flat())
+        const friendList: FriendInfo[] = await Promise.all(friendTasks).then(res => res.flat())
         for (const friend of friendList) {
             this.fl.set(friend.id, friend)
         }
