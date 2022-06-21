@@ -20,7 +20,7 @@ const client = new Client('wxid_xxxxx');
 client.login()
 client.on('message', (e) => {
     console.log(e);
-    if (e.content === 'hello') {
+    if (e.message === 'hello') {
         e.reply('world');
     }
 })
