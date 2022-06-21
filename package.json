@@ -1,18 +1,16 @@
 {
-  "name": "bot-wx",
-  "version": "1.0.0",
+  "name": "lib-wechat",
+  "version": "0.0.1",
   "description": "wx bot",
   "main": "lib/index.js",
   "scripts": {
-    "start": "node .",
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
-    "dev": "ts-node-dev -r tsconfig-paths/register src/example.ts",
     "pub": "npm publish --access public",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node ./example.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/liucl-cn/bot-wx.git"
+    "url": "git+https://github.com/liucl-cn/lib-wechat.git"
   },
   "keywords": [
     "wx",
@@ -23,9 +21,9 @@
   "author": "凉菜",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/liucl-cn/bot-wx/issues"
+    "url": "https://github.com/liucl-cn/lib-wechat/issues"
   },
-  "homepage": "https://github.com/liucl-cn/bot-wx#readme",
+  "homepage": "https://github.com/liucl-cn/lib-wechat#readme",
   "devDependencies": {
     "@types/node": "latest",
     "ts-node-dev": "latest",
