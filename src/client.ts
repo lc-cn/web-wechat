@@ -1,8 +1,6 @@
 import {join} from "path";
-import axios from "axios";
-import {deepMerge,logQrcode} from "./common";
-import {MessageRet, Sendable} from "./message/elements";
-import * as fs from "fs";
+import {deepMerge, removeFileSync} from "./common";
+import {Sendable} from "./message/elements";
 import {BaseClient} from "./core/baseClient";
 import {Group} from "./core/group";
 import {Friend} from "./core/friend";
@@ -56,6 +54,7 @@ export class Client extends BaseClient {
         if(result.code==='26')
             this.emit('system.online')
         else{
+            removeFileSync(join(this.dir,'device'))
             this.emit("system.login")
             this.logger.error(result)
         }

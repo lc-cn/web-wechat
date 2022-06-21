@@ -49,6 +49,11 @@ export function findOrCreateDirSync(dir:string){
         fs.mkdirSync(dir,{recursive:true})
     }
 }
+export function removeFileSync(file:string){
+    if(fs.existsSync(file)){
+        fs.unlinkSync(file)
+    }
+}
 // 同步创建文件
 export function findOrCreateFileSync(file:string,data?:any):boolean{
     if(typeof data!=='string')data=JSON.stringify(data)
