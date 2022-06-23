@@ -2,10 +2,10 @@ import {EventEmitter} from "events";
 import {Client} from "../client";
 import {lock} from "../common";
 import * as path from "path";
-import {MessageElem, Sendable, VideoElem} from "../message/elements";
-import {Converter} from "../message/converter";
+import {MessageElem, Sendable, VideoElem} from "../message";
+import {Converter} from "../message";
 import {ApiRejection} from "./baseClient";
-import {Image} from "../message/image";
+import {Image} from "../message";
 
 export interface ContactInfo{
 

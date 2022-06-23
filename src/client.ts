@@ -5,7 +5,8 @@ import {BaseClient} from "./core/baseClient";
 import {Group} from "./core/group";
 import {Friend} from "./core/friend";
 import {Member} from "./core/member";
-import {User} from "./core/user";
+import {User} from "./core";
+import {EventMap} from "./event";
 
 export type LogLevel = 'info' | 'none' | 'error' | 'debug' | 'warn' | 'trace' | 'silly' | 'mark';
 
@@ -23,6 +24,17 @@ export const defaultConfig: Config = {
     heartbeat_interval:2000,
     ignore_self:true,
     remote: 'http://49.234.86.244:8080/'
+}
+type Listener=(...args:any[])=>void
+export interface Client extends BaseClient {
+    on<K extends keyof EventMap>(event: K, listener: EventMap[K]): this;
+    on<S extends keyof string|symbol>(event: S & Exclude<keyof EventMap, S>, listener:Listener ): this;
+    once<K extends keyof EventMap>(event: K, listener: EventMap[K]): this;
+    once<S extends keyof string|symbol>(event: S & Exclude<keyof EventMap, S>, listener:Listener ): this;
+    addListener<K extends keyof EventMap>(event: K, listener: EventMap[K]): this;
+    addListener<S extends keyof string|symbol>(event: S & Exclude<keyof EventMap, S>, listener:Listener ): this;
+    off<K extends keyof EventMap>(event: K, listener: EventMap[K]): this;
+    off<S extends keyof string|symbol>(event: S & Exclude<keyof EventMap, S>, listener:Listener ): this;
 }
 export class Client extends BaseClient {
     readonly pickGroup = Group.as.bind(this) as (group_id:string,strict?:boolean)=>Group
@@ -60,5 +72,8 @@ export class Client extends BaseClient {
             this.emit("system.login")
             this.logger.error(result)
         }
+    }
+    async logout(){
+        return await this._callApi('/logout').then(res=>res.data)
     }
 }

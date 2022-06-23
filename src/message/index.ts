@@ -3,7 +3,9 @@ import {Group} from "../core/group";
 import {Client} from "../client";
 import {lock} from "../common";
 import {Sendable} from "./elements";
-
+export * from './image'
+export * from './elements'
+export * from './converter'
 export interface Msg {
     from_user_name: Record<string, any> & { str: string }
     to_user_name: Record<string, any> & { str: string }
