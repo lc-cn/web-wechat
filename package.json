@@ -1,13 +1,12 @@
 {
   "name": "lib-wechat",
-  "version": "0.0.1-4",
+  "version": "0.0.1",
   "description": "wx bot",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
-    "dev": "ts-node-dev -r tsconfig-paths/register src/test.ts",
-    "pub": "npm publish --access public",
-    "test": "node ./example.js"
+    "dev": "ts-node -r tsconfig-paths/register src/test.ts",
+    "pub": "npm publish --access public"
   },
   "repository": {
     "type": "git",
@@ -26,6 +25,7 @@
   },
   "homepage": "https://github.com/liucl-cn/lib-wechat#readme",
   "devDependencies": {
+    "@types/form-data": "^2.5.0",
     "@types/node": "latest",
     "ts-node-dev": "latest",
     "tsc-alias": "latest",
@@ -38,9 +38,11 @@
     "/lib/**/LICENSE"
   ],
   "dependencies": {
-    "axios": "^0.27.2",
+    "axios": "^1.6.3",
+    "bl": "^6.0.9",
+    "form-data": "4.0.0",
     "log4js": "^6.5.2",
-    "pngjs": "^6.0.0",
-    "probe-image-size": "^7.2.3"
+    "probe-image-size": "^7.2.3",
+    "qrcode-terminal": "^0.12.0"
   }
 }

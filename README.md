@@ -1,8 +1,7 @@
 ## lib-wechat
 
 1. nodejs端的lib-wechat 实现
-2. 按照oicq的规范，实现了的部分接口
-3. 目前处于测试阶段，功能较少，Bug较多
+2. 按照icqq的规范，实现了的部分接口
 
 ## 使用样例
 
@@ -16,7 +15,7 @@ npm install lib-wechat --save
 
 ```javascript
 const {Client} = require('lib-wechat');
-const client = new Client('wxid_xxxxx');
+const client = new Client();
 client.login()
 client.on('message', (e) => {
     console.log(e);
@@ -28,8 +27,7 @@ client.on('message', (e) => {
 
 ## 感谢
 
-1. [oicq](https://github.com/takayama-lily/oicq) 提供参考代码
-2. 某位不愿留名的大佬
+1. [icqq](https://github.com/icqqjs/icqq) 提供参考代码
 
 ## 申明
 
