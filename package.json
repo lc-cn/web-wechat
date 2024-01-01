@@ -1,6 +1,6 @@
 {
   "name": "lib-wechat",
-  "version": "0.0.1",
+  "version": "0.0.1-5",
   "description": "wx bot",
   "main": "lib/index.js",
   "scripts": {
