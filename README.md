@@ -16,7 +16,7 @@ npm install lib-wechat --save
 ```javascript
 const {Client} = require('lib-wechat');
 const client = new Client();
-client.login()
+client.start()
 client.on('message', (e) => {
     console.log(e);
     if (e.message === 'hello') {
