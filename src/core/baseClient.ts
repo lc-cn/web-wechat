@@ -11,6 +11,7 @@ import {getDeviceID, getPgv} from "@/utils";
 import {AlreadyLoggedError, alreadyLogoutError, CHUNK_SIZE, Sex, Status, SyncRet, SyncSelector} from "@/core/constanst";
 import {Contact} from "@/entries/contact";
 import mime from "@/core/mime";
+import * as process from "process";
 
 export class BaseClient extends EventEmitter {
     uin: number
@@ -46,7 +47,8 @@ export class BaseClient extends EventEmitter {
     }
     constructor(public config: BaseClient.Config) {
         super();
-        this.data_dir = config.data_dir;
+        this.data_dir = path.resolve(process.cwd(),config.data_dir);
+        if(!fs.existsSync(this.data_dir)) fs.mkdirSync(this.data_dir)
         const token_file = path.join(this.data_dir, "token.json");
         if (fs.existsSync(token_file)) {
             this.token = require(token_file);
