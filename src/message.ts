@@ -9,8 +9,8 @@ export class Message {
     raw_message: string = ''
     message: MessageElem[] = []
     create_time: number
+    time:number
     parser: Parser
-
     static genMsgId() {
         return Math.ceil(Date.now() * 1e3)
     }
