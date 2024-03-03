@@ -19,6 +19,7 @@ export class Message {
         this.parser = new Parser(c)
         this.message_id = original.MsgId
         this.create_time = original.CreateTime
+        this.time = original.CreateTime;
     }
 
     async parse() {
